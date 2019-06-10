@@ -1,7 +1,7 @@
 /**
- * react-number-format - 4.0.6
+ * react-number-format-diverted - 4.0.6
  * Author : Sudhanshu Yadav
- * Copyright (c) 2016, 2018 to Sudhanshu Yadav, released under the MIT license.
+ * Copyright (c) 2016, 2019 to Sudhanshu Yadav, released under the MIT license.
  * https://github.com/s-yadav/react-number-format
  */
 
@@ -353,6 +353,16 @@
   function escapeRegExp(str) {
     return str.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
   }
+  function negativeRegExp(negationFormat) {
+    switch (negationFormat) {
+      case 'parentheses':
+        return /\(/;
+
+      case 'negative':
+      default:
+        return /-/;
+    }
+  }
   function getThousandsGroupRegex(thousandsGroupStyle) {
     switch (thousandsGroupStyle) {
       case 'lakh':
@@ -364,6 +374,26 @@
       case 'thousand':
       default:
         return /(\d)(?=(\d{3})+(?!\d))/g;
+    }
+  }
+  function getNegationPrefixSymbol(negationFormat) {
+    switch (negationFormat) {
+      case 'parentheses':
+        return '(';
+
+      case 'negative':
+      default:
+        return '-';
+    }
+  }
+  function getNegationSuffixSymbol(negationFormat) {
+    switch (negationFormat) {
+      case 'parentheses':
+        return ')';
+
+      case 'negative':
+      default:
+        return '';
     }
   } //spilt a float number into different parts beforeDecimal, afterDecimal, and negation
 
@@ -524,6 +554,7 @@
     isNumericString: propTypes.bool,
     customInput: propTypes.func,
     allowNegative: propTypes.bool,
+    negationFormat: propTypes.oneOf(['minus', 'parentheses']),
     allowEmptyFormatting: propTypes.bool,
     onValueChange: propTypes.func,
     onKeyDown: propTypes.func,
@@ -544,6 +575,7 @@
     prefix: '',
     suffix: '',
     allowNegative: true,
+    negationFormat: 'minus',
     allowEmptyFormatting: false,
     isNumericString: false,
     type: 'text',
@@ -632,15 +664,18 @@
       key: "getFloatString",
       value: function getFloatString() {
         var num = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var decimalScale = this.props.decimalScale;
+        var _this$props = this.props,
+            decimalScale = _this$props.decimalScale,
+            negationFormat = _this$props.negationFormat;
 
         var _this$getSeparators = this.getSeparators(),
             decimalSeparator = _this$getSeparators.decimalSeparator;
 
         var numRegex = this.getNumberRegex(true); //remove negation for regex check
 
-        var hasNegation = num[0] === '-';
-        if (hasNegation) num = num.replace('-', ''); //if decimal scale is zero remove decimal and number after decimalSeparator
+        var hasParentheses = num[0] === '(' && num[num.length - 1] === ')';
+        var hasNegation = num[0] === '-' || hasParentheses;
+        if (hasNegation) num = num.replace(/-|\(|\)/g, ''); //if decimal scale is zero remove decimal and number after decimalSeparator
 
         if (decimalSeparator && decimalScale === 0) {
           num = num.split(decimalSeparator)[0];
@@ -655,16 +690,23 @@
         } //add negation back
 
 
-        if (hasNegation) num = '-' + num;
+        if (hasNegation) {
+          if (negationFormat === 'parentheses') {
+            num = "(".concat(num, ")");
+          } else {
+            num = '-' + num;
+          }
+        }
+
         return num;
       } //returned regex assumes decimalSeparator is as per prop
 
     }, {
       key: "getNumberRegex",
       value: function getNumberRegex(g, ignoreDecimalSeparator) {
-        var _this$props = this.props,
-            format = _this$props.format,
-            decimalScale = _this$props.decimalScale;
+        var _this$props2 = this.props,
+            format = _this$props2.format,
+            decimalScale = _this$props2.decimalScale;
 
         var _this$getSeparators2 = this.getSeparators(),
             decimalSeparator = _this$getSeparators2.decimalSeparator;
@@ -750,18 +792,31 @@
     }, {
       key: "correctCaretPosition",
       value: function correctCaretPosition(value, caretPos, direction) {
-        var _this$props2 = this.props,
-            prefix = _this$props2.prefix,
-            suffix = _this$props2.suffix,
-            format = _this$props2.format; //if value is empty return 0
+        var _this$props3 = this.props,
+            prefix = _this$props3.prefix,
+            suffix = _this$props3.suffix,
+            format = _this$props3.format,
+            negationFormat = _this$props3.negationFormat; //if value is empty return 0
 
         if (value === '') return 0; //caret position should be between 0 and value length
 
         caretPos = clamp(caretPos, 0, value.length); //in case of format as number limit between prefix and suffix
 
         if (!format) {
-          var hasNegation = value[0] === '-';
-          return clamp(caretPos, prefix.length + (hasNegation ? 1 : 0), value.length - suffix.length);
+          var hasNegation;
+          var negationLength = 0;
+
+          if (negationFormat === 'parentheses') {
+            hasNegation = value[0] === '(' && value[value.length - 1] === ')';
+
+            if (hasNegation) {
+              negationLength = 1;
+            }
+          } else {
+            hasNegation = value[0] === '-';
+          }
+
+          return clamp(caretPos, prefix.length + (hasNegation ? 1 : 0), value.length - suffix.length - negationLength);
         } //in case if custom format method don't do anything
 
 
@@ -834,27 +889,43 @@
       }
       /** caret specific methods ends **/
 
-      /** methods to remove formattting **/
+      /** methods to remove formatting **/
 
     }, {
       key: "removePrefixAndSuffix",
       value: function removePrefixAndSuffix(val) {
-        var _this$props3 = this.props,
-            format = _this$props3.format,
-            prefix = _this$props3.prefix,
-            suffix = _this$props3.suffix; //remove prefix and suffix
+        var _this$props4 = this.props,
+            format = _this$props4.format,
+            prefix = _this$props4.prefix,
+            suffix = _this$props4.suffix,
+            negationFormat = _this$props4.negationFormat; //remove prefix and suffix
 
         if (!format && val) {
-          var isNegative = val[0] === '-'; //remove negation sign
+          var isNegative = val[0] === '-';
+          var stringEnd = val.length;
 
-          if (isNegative) val = val.substring(1, val.length); //remove prefix
+          if (negationFormat === 'parentheses') {
+            isNegative = val[0] === '(' && val[val.length - 1] === ')';
+
+            if (isNegative) {
+              stringEnd = stringEnd - 1;
+            }
+          } //remove negation sign
+
+
+          if (isNegative && negationFormat !== 'parentheses') val = val.substring(1, stringEnd); //remove prefix
 
           val = prefix && val.indexOf(prefix) === 0 ? val.substring(prefix.length, val.length) : val; //remove suffix
 
           var suffixLastIndex = val.lastIndexOf(suffix);
+
+          if (negationFormat === 'parentheses' && isNegative) {
+            suffixLastIndex = suffixLastIndex - 1;
+          }
+
           val = suffix && suffixLastIndex !== -1 && suffixLastIndex === val.length - suffix.length ? val.substring(0, suffixLastIndex) : val; //add negation sign back
 
-          if (isNegative) val = '-' + val;
+          if (isNegative && negationFormat !== 'parentheses') val = '-' + val;
         }
 
         return val;
@@ -892,9 +963,9 @@
     }, {
       key: "removeFormatting",
       value: function removeFormatting(val) {
-        var _this$props4 = this.props,
-            format = _this$props4.format,
-            removeFormatting = _this$props4.removeFormatting;
+        var _this$props5 = this.props,
+            format = _this$props5.format,
+            removeFormatting = _this$props5.removeFormatting;
         if (!val) return val;
 
         if (!format) {
@@ -945,19 +1016,24 @@
     }, {
       key: "formatAsNumber",
       value: function formatAsNumber(numStr) {
-        var _this$props5 = this.props,
-            decimalScale = _this$props5.decimalScale,
-            fixedDecimalScale = _this$props5.fixedDecimalScale,
-            prefix = _this$props5.prefix,
-            suffix = _this$props5.suffix,
-            allowNegative = _this$props5.allowNegative,
-            thousandsGroupStyle = _this$props5.thousandsGroupStyle;
+        var _this$props6 = this.props,
+            decimalScale = _this$props6.decimalScale,
+            fixedDecimalScale = _this$props6.fixedDecimalScale,
+            prefix = _this$props6.prefix,
+            suffix = _this$props6.suffix,
+            allowNegative = _this$props6.allowNegative,
+            thousandsGroupStyle = _this$props6.thousandsGroupStyle,
+            negationFormat = _this$props6.negationFormat;
 
         var _this$getSeparators4 = this.getSeparators(),
             thousandSeparator = _this$getSeparators4.thousandSeparator,
             decimalSeparator = _this$getSeparators4.decimalSeparator;
 
         var hasDecimalSeparator = numStr.indexOf('.') !== -1 || decimalScale && fixedDecimalScale;
+
+        if (negationFormat === 'parentheses' && numStr[0] === '(' && numStr[numStr.length - 1] === ')') {
+          numStr = '-' + numStr.substring(1, numStr.length - 1);
+        }
 
         var _splitDecimal = splitDecimal(numStr, allowNegative),
             beforeDecimal = _splitDecimal.beforeDecimal,
@@ -977,7 +1053,11 @@
         if (prefix) beforeDecimal = prefix + beforeDecimal;
         if (suffix) afterDecimal = afterDecimal + suffix; //restore negation sign
 
-        if (addNegation) beforeDecimal = '-' + beforeDecimal;
+        if (addNegation) {
+          beforeDecimal = getNegationPrefixSymbol(negationFormat) + beforeDecimal;
+          afterDecimal = afterDecimal + getNegationSuffixSymbol(negationFormat);
+        }
+
         numStr = beforeDecimal + (hasDecimalSeparator && decimalSeparator || '') + afterDecimal;
         return numStr;
       }
@@ -985,15 +1065,17 @@
       key: "formatNumString",
       value: function formatNumString() {
         var numStr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var _this$props6 = this.props,
-            format = _this$props6.format,
-            allowEmptyFormatting = _this$props6.allowEmptyFormatting;
+        var _this$props7 = this.props,
+            format = _this$props7.format,
+            allowEmptyFormatting = _this$props7.allowEmptyFormatting;
         var formattedValue = numStr;
 
         if (numStr === '' && !allowEmptyFormatting) {
           formattedValue = '';
         } else if (numStr === '-' && !format) {
           formattedValue = '-';
+        } else if (numStr === '()' && !format) {
+          formattedValue = numStr;
         } else if (typeof format === 'string') {
           formattedValue = this.formatWithPattern(formattedValue);
         } else if (typeof format === 'function') {
@@ -1007,15 +1089,15 @@
     }, {
       key: "formatValueProp",
       value: function formatValueProp(defaultValue) {
-        var _this$props7 = this.props,
-            format = _this$props7.format,
-            decimalScale = _this$props7.decimalScale,
-            fixedDecimalScale = _this$props7.fixedDecimalScale,
-            allowEmptyFormatting = _this$props7.allowEmptyFormatting;
         var _this$props8 = this.props,
-            _this$props8$value = _this$props8.value,
-            value = _this$props8$value === void 0 ? defaultValue : _this$props8$value,
-            isNumericString = _this$props8.isNumericString;
+            format = _this$props8.format,
+            decimalScale = _this$props8.decimalScale,
+            fixedDecimalScale = _this$props8.fixedDecimalScale,
+            allowEmptyFormatting = _this$props8.allowEmptyFormatting;
+        var _this$props9 = this.props,
+            _this$props9$value = _this$props9.value,
+            value = _this$props9$value === void 0 ? defaultValue : _this$props9$value,
+            isNumericString = _this$props9.isNumericString;
         var isNonNumericFalsy = !value && value !== 0;
 
         if (isNonNumericFalsy && allowEmptyFormatting) {
@@ -1048,18 +1130,27 @@
       key: "formatNegation",
       value: function formatNegation() {
         var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-        var allowNegative = this.props.allowNegative;
-        var negationRegex = new RegExp('(-)');
-        var doubleNegationRegex = new RegExp('(-)(.)*(-)'); // Check number has '-' value
+        var _this$props10 = this.props,
+            allowNegative = _this$props10.allowNegative,
+            negationFormat = _this$props10.negationFormat;
+        var negationRegex = /(-)|(\()|(\))/;
+        var doubleNegationRegex = /(-)(.)*(-)/; // Check number has '-' value
 
         var hasNegation = negationRegex.test(value); // Check number has 2 or more '-' values
 
         var removeNegation = doubleNegationRegex.test(value); //remove negation
 
-        value = value.replace(/-/g, '');
+        value = value.replace(/-|\(|\)/g, '');
 
         if (hasNegation && !removeNegation && allowNegative) {
-          value = '-' + value;
+          switch (negationFormat) {
+            case 'parentheses':
+              return '(' + value + ')';
+
+            case 'negative':
+            default:
+              return '-' + value;
+          }
         }
 
         return value;
@@ -1084,12 +1175,12 @@
     }, {
       key: "isCharacterAFormat",
       value: function isCharacterAFormat(caretPos, value) {
-        var _this$props9 = this.props,
-            format = _this$props9.format,
-            prefix = _this$props9.prefix,
-            suffix = _this$props9.suffix,
-            decimalScale = _this$props9.decimalScale,
-            fixedDecimalScale = _this$props9.fixedDecimalScale;
+        var _this$props11 = this.props,
+            format = _this$props11.format,
+            prefix = _this$props11.prefix,
+            suffix = _this$props11.suffix,
+            decimalScale = _this$props11.decimalScale,
+            fixedDecimalScale = _this$props11.fixedDecimalScale;
 
         var _this$getSeparators5 = this.getSeparators(),
             decimalSeparator = _this$getSeparators5.decimalSeparator; //check within format pattern
@@ -1120,11 +1211,11 @@
     }, {
       key: "correctInputValue",
       value: function correctInputValue(caretPos, lastValue, value) {
-        var _this$props10 = this.props,
-            format = _this$props10.format,
-            allowNegative = _this$props10.allowNegative,
-            prefix = _this$props10.prefix,
-            suffix = _this$props10.suffix;
+        var _this$props12 = this.props,
+            format = _this$props12.format,
+            allowNegative = _this$props12.allowNegative,
+            prefix = _this$props12.prefix,
+            suffix = _this$props12.suffix;
 
         var _this$getSeparators6 = this.getSeparators(),
             decimalSeparator = _this$getSeparators6.decimalSeparator;
@@ -1165,6 +1256,10 @@
 
         if (!format) {
           var numericString = this.removeFormatting(value);
+
+          if (numericString[0] === '(' && numericString[numericString.length - 1] === ')') {
+            numericString = "-".concat(numericString.substring(1, numericString.length - 1));
+          }
 
           var _splitDecimal2 = splitDecimal(numericString, allowNegative),
               beforeDecimal = _splitDecimal2.beforeDecimal,
@@ -1299,17 +1394,17 @@
             _el$value = el.value,
             value = _el$value === void 0 ? '' : _el$value;
         var expectedCaretPosition;
-        var _this$props11 = this.props,
-            decimalScale = _this$props11.decimalScale,
-            fixedDecimalScale = _this$props11.fixedDecimalScale,
-            prefix = _this$props11.prefix,
-            suffix = _this$props11.suffix,
-            format = _this$props11.format,
-            onKeyDown = _this$props11.onKeyDown,
-            onValueChange = _this$props11.onValueChange;
+        var _this$props13 = this.props,
+            decimalScale = _this$props13.decimalScale,
+            fixedDecimalScale = _this$props13.fixedDecimalScale,
+            prefix = _this$props13.prefix,
+            suffix = _this$props13.suffix,
+            format = _this$props13.format,
+            onKeyDown = _this$props13.onKeyDown,
+            negationFormat = _this$props13.negationFormat;
         var ignoreDecimalSeparator = decimalScale !== undefined && fixedDecimalScale;
         var numRegex = this.getNumberRegex(false, ignoreDecimalSeparator);
-        var negativeRegex = new RegExp('-');
+        var negativeRegex = negativeRegExp(negationFormat);
         var isPatternFormat = typeof format === 'string';
         this.selectionBeforeInput = {
           selectionStart: selectionStart,
@@ -1348,8 +1443,15 @@
           negative value while the cursor position is after prefix. We can't handle it on onChange because
           we will not have any information of keyPress
           */
-          if (selectionStart <= leftBound + 1 && value[0] === '-' && typeof format === 'undefined') {
-            var newValue = value.substring(1); //persist event before performing async task
+          var negativeValue = getNegationPrefixSymbol(negationFormat);
+
+          if (selectionStart <= leftBound + 1 && value[0] === negativeValue && typeof format === 'undefined') {
+            var newValue = value.substring(1);
+
+            if (negationFormat === 'parentheses') {
+              newValue = value.slice(0, -1);
+            } //persist event before performing async task
+
 
             e.persist();
             this.updateValue({
@@ -1435,12 +1537,12 @@
     }, {
       key: "render",
       value: function render() {
-        var _this$props12 = this.props,
-            type = _this$props12.type,
-            displayType = _this$props12.displayType,
-            customInput = _this$props12.customInput,
-            renderText = _this$props12.renderText,
-            getInputRef = _this$props12.getInputRef;
+        var _this$props14 = this.props,
+            type = _this$props14.type,
+            displayType = _this$props14.displayType,
+            customInput = _this$props14.customInput,
+            renderText = _this$props14.renderText,
+            getInputRef = _this$props14.getInputRef;
         var value = this.state.value;
         var otherProps = omit(this.props, propTypes$1);
 
