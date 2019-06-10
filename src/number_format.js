@@ -583,7 +583,7 @@ class NumberFormat extends React.Component {
   formatNegation(value: string = '') {
     const {allowNegative, negationFormat} = this.props;
 
-    const negationRegex = /(-)|(\()/;
+    const negationRegex = /(-)|(\()|(\))/;
     const doubleNegationRegex = /(-)(.)*(-)/;
 
     // Check number has '-' value
