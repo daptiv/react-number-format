@@ -163,13 +163,14 @@ class NumberFormat extends React.Component {
 
   /** Misc methods **/
   getFloatString(num: string = '') {
-    const {decimalScale} = this.props;
+    const {decimalScale, negationFormat} = this.props;
     const {decimalSeparator} = this.getSeparators();
     const numRegex = this.getNumberRegex(true);
 
     //remove negation for regex check
-    const hasNegation = num[0] === '-';
-    if (hasNegation) num = num.replace('-', '');
+    const hasParentheses = num[0] === '(' && num[num.length - 1] === ')';
+    const hasNegation = num[0] === '-' || hasParentheses;
+    if (hasNegation) num = num.replace(/-|\(|\)/g, '');
 
     //if decimal scale is zero remove decimal and number after decimalSeparator
     if (decimalSeparator && decimalScale === 0) {
@@ -186,7 +187,13 @@ class NumberFormat extends React.Component {
     }
 
     //add negation back
-    if (hasNegation) num = '-' + num;
+    if (hasNegation) {
+      if (negationFormat === 'parentheses') {
+        num = `(${num})`;
+      } else {
+        num = '-' + num;
+      }
+    }
 
     return num;
   }
@@ -392,7 +399,7 @@ class NumberFormat extends React.Component {
       }
 
       //remove negation sign
-      if (isNegative) val = val.substring(1, stringEnd);
+      if (isNegative && negationFormat !== 'parentheses') val = val.substring(1, stringEnd);
 
       //remove prefix
       val = prefix && val.indexOf(prefix) === 0 ? val.substring(prefix.length, val.length) : val;
@@ -406,7 +413,7 @@ class NumberFormat extends React.Component {
       val = suffix && suffixLastIndex !== -1 && suffixLastIndex === val.length - suffix.length ? val.substring(0, suffixLastIndex) : val;
 
       //add negation sign back
-      if (isNegative) val = '-' + val;
+      if (isNegative && negationFormat !== 'parentheses') val = '-' + val;
     }
 
     return val;
@@ -486,6 +493,13 @@ class NumberFormat extends React.Component {
     const {thousandSeparator, decimalSeparator} = this.getSeparators();
 
     const hasDecimalSeparator = numStr.indexOf('.') !== -1 || (decimalScale && fixedDecimalScale);
+
+    if (negationFormat === 'parentheses' && 
+        numStr[0] === '(' && 
+        numStr[numStr.length - 1] === ')') {
+          numStr = '-' + numStr.substring(1, numStr.length - 1);
+        }
+
     let {beforeDecimal, afterDecimal, addNegation} = splitDecimal(numStr, allowNegative); // eslint-disable-line prefer-const
 
     //apply decimal precision if its defined
@@ -519,6 +533,8 @@ class NumberFormat extends React.Component {
       formattedValue = '';
     } else if (numStr === '-' && !format) {
       formattedValue = '-';
+    } else if (numStr === '()' && !format) {
+      formattedValue = numStr;
     } else if (typeof format === 'string') {
       formattedValue = this.formatWithPattern(formattedValue);
     } else if (typeof format === 'function') {
@@ -567,7 +583,7 @@ class NumberFormat extends React.Component {
   formatNegation(value: string = '') {
     const {allowNegative, negationFormat} = this.props;
 
-    const negationRegex = /(-)/;
+    const negationRegex = /(-)|(\()/;
     const doubleNegationRegex = /(-)(.)*(-)/;
 
     // Check number has '-' value
@@ -577,7 +593,7 @@ class NumberFormat extends React.Component {
     const removeNegation = doubleNegationRegex.test(value);
 
     //remove negation
-    value = value.replace(/-/g, '');
+    value = value.replace(/-|\(|\)/g, '');
 
     if (hasNegation && !removeNegation && allowNegative) {
       switch (negationFormat) {
@@ -673,7 +689,12 @@ class NumberFormat extends React.Component {
     //for numbers check if beforeDecimal got deleted and there is nothing after decimal,
     //clear all numbers in such case while keeping the - sign
     if (!format) {
-      const numericString = this.removeFormatting(value);
+      let numericString = this.removeFormatting(value);
+      if (numericString[0] === '(' && numericString[numericString.length - 1] === ')') {
+        numericString = `-${numericString.substring(1, numericString.length - 1)}`;
+      }
+
+
       let {beforeDecimal, afterDecimal, addNegation} = splitDecimal(numericString, allowNegative); // eslint-disable-line prefer-const
 
       //clear only if something got deleted
