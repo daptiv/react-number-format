@@ -608,13 +608,15 @@ class NumberFormat extends React.Component {
     return value;
   }
 
-  formatInput(value: string = '') {
-    const {format} = this.props;
+  formatInput(value: string = '', previousValue: string = '') {
+    const {format, negationFormat} = this.props;
 
     //format negation only if we are formatting as number
+    const isDeleteOfParenthese = negationFormat === 'parentheses' && previousValue === '()' && value === '('
     if (!format) {
       value = this.removePrefixAndSuffix(value);
-      value = this.formatNegation(value);
+
+      value = isDeleteOfParenthese ? '' : this.formatNegation(value);
     }
 
     //remove formatting from number
@@ -758,7 +760,7 @@ class NumberFormat extends React.Component {
     }
   }
 
-  onChange(e: SyntheticInputEvent) {
+  onChange(e: SyntheticInputEvent, previousValue) {
     e.persist();
     const el = e.target;
     let inputValue = el.value;
@@ -770,7 +772,7 @@ class NumberFormat extends React.Component {
 
     inputValue = this.correctInputValue(currentCaretPosition, lastValue, inputValue);
 
-    let formattedValue = this.formatInput(inputValue) || '';
+    let formattedValue = this.formatInput(inputValue, previousValue) || '';
     const numAsString = this.removeFormatting(formattedValue);
 
     const valueObj = this.getValueObject(formattedValue, numAsString);
