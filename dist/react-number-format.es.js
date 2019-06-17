@@ -1,5 +1,5 @@
 /**
- * react-number-format-diverted - 1.0.1
+ * react-number-format-diverted - 1.1.0
  * Author : Sudhanshu Yadav
  * Copyright (c) 2016, 2019 to Sudhanshu Yadav, released under the MIT license.
  * https://github.com/hyperd/react-number-format
@@ -1158,7 +1158,7 @@ function (_React$Component) {
           format = _this$props11.format,
           negationFormat = _this$props11.negationFormat; //format negation only if we are formatting as number
 
-      var isDeleteOfParenthese = negationFormat === 'parentheses' && previousValue === '()' && value === '(';
+      var isDeleteOfParenthese = negationFormat === 'parentheses' && previousValue === '()' && value === ')';
 
       if (!format) {
         value = this.removePrefixAndSuffix(value);

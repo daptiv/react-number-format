@@ -612,7 +612,7 @@ class NumberFormat extends React.Component {
     const {format, negationFormat} = this.props;
 
     //format negation only if we are formatting as number
-    const isDeleteOfParenthese = negationFormat === 'parentheses' && previousValue === '()' && value === '('
+    const isDeleteOfParenthese = negationFormat === 'parentheses' && previousValue === '()' && value === ')'
     if (!format) {
       value = this.removePrefixAndSuffix(value);
 
