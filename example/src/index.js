@@ -124,7 +124,7 @@ class App extends React.Component {
             negationFormat='parentheses'
           </div>
           <div>
-            <NumberFormat thousandSeparator="," decimalSeparator="." prefix="$" negationFormat="parentheses" />
+            <NumberFormat thousandSeparator="," decimalSeparator="." decimalScale={2} fixedDecimalScale={true} negationFormat="parentheses" />
           </div>
           <br/>
           <div>

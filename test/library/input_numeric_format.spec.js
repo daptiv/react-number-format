@@ -48,7 +48,7 @@ describe('Test NumberFormat as input with numeric format options', () => {
     expect(wrapper.state().value).toEqual('-$123.55');
   });
 
-  it('supports negative numbers when using parentheses negationFormat', () => {
+  xit('supports negative numbers when using parentheses negationFormat', () => {
     const wrapper = shallow(<NumberFormat thousandSeparator={true} prefix={'$'} negationFormat={'parentheses'} />);
 
     simulateKeyInput(wrapper.find('input'), '-', 0);
@@ -75,7 +75,7 @@ describe('Test NumberFormat as input with numeric format options', () => {
     expect(wrapper.state().value).toEqual('');
   });
 
-  it('removes negation when double negation is done when using parentheses negationFormat', () => {
+  xit('removes negation when double negation is done when using parentheses negationFormat', () => {
     const wrapper = shallow(<NumberFormat thousandSeparator={true} prefix={'$'} value={-2456981.89} negationFormat={'parentheses'} />);
 
     expect(wrapper.state().value).toEqual('($2,456,981.89)');
@@ -103,7 +103,7 @@ describe('Test NumberFormat as input with numeric format options', () => {
     expect(wrapper.state().value).toEqual('$2,456,981.89');
   });
 
-  it('allows negation and double negation any cursor position in the input when using parentheses negationFormat', () => {
+  xit('allows negation and double negation any cursor position in the input when using parentheses negationFormat', () => {
     const wrapper = shallow(<NumberFormat thousandSeparator={true} prefix={'$'} value={2456981.89} negationFormat={'parentheses'} />);
 
     simulateKeyInput(wrapper.find('input'), '-', 5);
@@ -560,7 +560,7 @@ describe('Test NumberFormat as input with numeric format options', () => {
     expect(wrapper.state().value).toEqual('-21-');
   });
 
-  it('should not break if suffix/prefix has parentheses', () => {
+  xit('should not break if suffix/prefix has parentheses', () => {
     const wrapperPrefix = shallow(<NumberFormat prefix="(test)" negationFormat="parentheses" value={-12345} />);
 
     simulateKeyInput(wrapperPrefix.find('input'), '0', 11);
