@@ -1,5 +1,5 @@
 {
-  "name": "react-number-format-diverted",
+  "name": "react-number-format",
   "description": "React component to format number in an input or as a text.",
   "version": "1.1.1",
   "main": "lib/number_format.js",
@@ -8,11 +8,7 @@
   "types": "typings/number_format.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperd/react-number-format"
-  },
-  "bugs": {
-    "mail": "diego.ledesma@outlook.com",
-    "url": "https://github.com/hyperd/react-number-format/issues"
+    "url": "https://github.com/daptiv/react-number-format"
   },
   "keywords": [
     "react-component",
