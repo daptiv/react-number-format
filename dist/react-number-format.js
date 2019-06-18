@@ -1,8 +1,8 @@
 /**
- * react-number-format-diverted - 1.1.0
+ * @daptiv/react-number-format - 1.0.0
  * Author : Sudhanshu Yadav
  * Copyright (c) 2016, 2019 to Sudhanshu Yadav, released under the MIT license.
- * https://github.com/hyperd/react-number-format
+ * https://github.com/daptiv/react-number-format
  */
 
 (function (global, factory) {
