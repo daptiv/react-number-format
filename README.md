@@ -1,7 +1,5 @@
-# react-number-format-diverted
+# react-number-format
 React component to format number in an input or as a text.
-
-### NOTE: This is a divertion from the original package from Sudhanshu Yadav
 
 ### Features
 1. Prefix, suffix and thousand separator.
