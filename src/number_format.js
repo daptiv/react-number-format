@@ -287,20 +287,36 @@ class NumberFormat extends React.Component {
     //caret position should be between 0 and value length
     caretPos = clamp(caretPos, 0, value.length);
 
+    let suffixLength = suffix.length,
+        prefixLength = prefix.length
+
     //in case of format as number limit between prefix and suffix
     if (!format) {
       let hasNegation;
       let negationLength = 0;
+      const beginChar = value[0],
+            endChar = value[value.length - 1]
       if (negationFormat === 'parentheses') {
-        hasNegation = value[0] === '(' && value[value.length - 1] === ')';
+        hasNegation = beginChar === '(' && endChar === ')';
         if (hasNegation) {
           negationLength = 1;
         }
+
+        if (value === '()') {
+          if (suffix) {
+            suffixLength = 0
+          }
+
+          if (prefix) {
+            prefixLength = 0
+          }
+        }
       }
       else {
-        hasNegation = value[0] === '-';
+        hasNegation = beginChar === '-';
       }
-      return clamp(caretPos, prefix.length + (hasNegation ? 1 : 0), value.length - suffix.length - negationLength);
+
+      return clamp(caretPos, prefixLength + (hasNegation ? 1 : 0), value.length - suffixLength - negationLength);
     }
 
     //in case if custom format method don't do anything
