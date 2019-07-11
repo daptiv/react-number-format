@@ -563,7 +563,7 @@ class NumberFormat extends React.Component {
   }
 
   formatValueProp(defaultValue: string | number) {
-    const {format, decimalScale, fixedDecimalScale, allowEmptyFormatting} = this.props;
+    const {format, decimalScale, fixedDecimalScale, allowEmptyFormatting, completeDecimalPlaces} = this.props;
     let {value = defaultValue, isNumericString} = this.props;
 
     const isNonNumericFalsy = !value && value !== 0;
@@ -575,7 +575,7 @@ class NumberFormat extends React.Component {
     // if value is not defined return empty string
     if (isNonNumericFalsy && !allowEmptyFormatting) return '';
 
-    if (typeof value === 'number') {
+    if (!isNaN(value) && (typeof value === 'number' || completeDecimalPlaces === true)) {
       value = value.toString();
       isNumericString = true;
     }
