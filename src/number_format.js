@@ -894,7 +894,10 @@ class NumberFormat extends React.Component {
     }
 
 
-    if (newCaretPosition !== expectedCaretPosition || expectedCaretPosition < leftBound || expectedCaretPosition > rightBound) {
+    if (newCaretPosition !== expectedCaretPosition ||
+      (expectedCaretPosition < leftBound &&
+        leftBound != prefix.length) ||
+      expectedCaretPosition > rightBound) {
       e.preventDefault();
       this.setPatchedCaretPosition(el, newCaretPosition, value);
     }
