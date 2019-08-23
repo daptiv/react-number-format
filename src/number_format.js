@@ -953,7 +953,7 @@ class NumberFormat extends React.Component {
   }
 
   render() {
-    const {type, displayType, customInput, renderText, getInputRef, defaultValue} = this.props;
+    const {type, displayType, customInput, renderText, getInputRef, defaultValue, onUndo} = this.props;
     const {value} = this.state;
 
     const otherProps = omit(this.props, propTypes);
